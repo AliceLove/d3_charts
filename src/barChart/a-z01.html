@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>v-bar</title>
+    <link rel="stylesheet" type="text/css" href="../../css/styles.css"/>
+    <script type="text/javascript" src="../../lib/d3.js"></script>
+</head>
+<body>
+
+<div class="chart"></div>
+
+<script type="text/javascript">
+    var margin = {top: 40,right: 20,bottom: 30,left: 40},
+        width = 750 - margin.left - margin.right,
+        height = 450 - margin.top - margin.bottom;
+
+    // var formatPercent = d3_test_charts.format(".0%");
+
+    var x = d3.scale.ordinal()
+        .rangeRoundBands([0, width], .3);
+
+    var y = d3.scale.linear()
+        .range([height, 0]);
+
+    var xAxis = d3.svg.axis()
+        .scale(x)
+        .orient("bottom");
+
+    var yAxis = d3.svg.axis()
+        .scale(y)
+        .orient("left");
+        //.tickFormat(formatPercent);
+
+    var svg = d3.select(".chart").append("svg")
+        .attr("class","axis")
+        .attr("width", width + margin.left + margin.right)
+        .attr("height", height + margin.top + margin.bottom)
+        .append("g")
+        .attr("transform", "translate(" + margin.left + "," + margin.top + ")");  //这么写挺好的
+
+
+    d3.json("../../data/fruits.json",  function(error, data) {
+//       data = data10.filter(function (d,i) {
+//           return i < 10;
+//        })
+        x.domain(data.map(function(d,i) {
+            return d.f_id;
+        }));
+
+        y.domain([0,d3.max(data,function (d,i) {
+            return d.f_price;
+        })]);
+
+
+        svg.append("g")
+            .attr("class", "x-axis")
+            .attr("transform", "translate(0," + height + ")")
+            .call(xAxis);
+
+        svg.append("g")
+            .attr("class", "y-axis")
+            .call(yAxis);
+
+
+        svg.selectAll(".bar")
+            .data(data)
+            .enter().append("rect")
+            .attr("class", "bar")
+            .attr("x", function(d) {
+                console.log(x(d.f_id))
+                return x(d.f_id);
+            })
+            .attr("width", x.rangeBand()) //.rangeBand() Returns the band width.
+            .attr("y", function(d) {
+//                console.log(y(d.f_price));
+//                console.log(d.f_price);
+                return y(d.f_price);
+
+            })
+            .attr("height", function(d) {
+//                console.log(height - y(d.f_price));
+                return height - y(d.f_price);
+            })
+
+    });
+
+</script>
+</body>
+</html>

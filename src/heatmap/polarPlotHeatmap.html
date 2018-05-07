@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<style>
+
+    .frame {
+        fill: none;
+        stroke: #000;
+    }
+
+    .axis text {
+        font: 10px sans-serif;
+    }
+
+    .axis line,
+    .axis circle {
+        fill: none;
+        stroke: #777;
+        stroke-dasharray: 1, 4;
+    }
+
+    .axis :last-of-type circle {
+        stroke: #333;
+        stroke-dasharray: none;
+    }
+
+    .line {
+        fill: none;
+        stroke: red;
+        stroke-width: 1.5px;
+    }
+
+</style>
+<body>
+<script src="http://d3js.org/d3.v3.js"></script>
+<script>
+
+    var width = 960,
+        height = 500,
+        radius = Math.min(width, height) / 2 - 30;
+
+    var svg = d3.select("body").append("svg")
+        .attr("width", width)
+        .attr("height", height)
+        .append("g")
+        .attr("transform", "translate(" + width / 2 + "," + height / 2 + ")");
+
+    d3.csv("../../data/phi_freq.csv", function (error, data) {
+
+        console.log(data);
+
+        z = d3.scale.linear().range(["yellow", "steelblue"])
+            .domain(d3.extent(data, function(d) { return d['RCS(dBm2)']; }));
+
+        data.forEach(function(d) {
+            d['Phi(Deg)'] = +d['Phi(Deg)'];   //取对象的.操作只针对属性是简单字符（字母数字下划线），若有其他类型字符推荐[" "]方法
+            d['Freq(GHz)'] = +d['Freq(GHz)'];
+            d['RCS(dBm2)'] = +d['RCS(dBm2)'];
+        });
+
+        var r = d3.scale.linear()
+            .domain(d3.extent(data, function(d) { return d['Freq(GHz)']; }))  // 后期还要继续改domain的范围
+            .range([0, radius]);
+
+        //极坐标的几个圆形
+        var gr = svg.append("g")
+            .attr("class", "r axis")
+            .selectAll("g")
+            .data(r.ticks(5))
+            .enter().append("g");
+
+        gr.append("circle")
+            .attr("r", r);
+
+        gr.append("text")
+            .attr("y", function (d) {
+                return -r(d) - 4;
+            })
+            .attr("transform", "rotate(15)")
+            .style("text-anchor", "middle")
+            .text(function (d) {
+                return d;
+            });
+
+        // 极坐标的从圆心出来的射线+角度文字
+        var ga = svg.append("g")
+            .attr("class", "a axis")
+            .selectAll("g")
+            .data(d3.range(-180, 180, 30))
+            .enter().append("g")
+            .attr("transform", function (d) {
+                return "rotate(" + (d + 90) + ")";
+            });
+
+        //极坐标的射线
+        ga.append("line")
+            .attr("x2", radius);
+
+        //极坐标的角度
+        ga.append("text")
+            .attr("x", radius + 6)
+            .attr("dy", ".35em")
+            .style("text-anchor", function (d) {
+                return d < 270 && d > 0 ? "end" : null;
+            })
+            .attr("transform", function (d) {
+                return d < 270 && d > 0 ? "rotate(180 " + (radius + 6) + ",0)" : null;
+            })
+            .text(function (d) {
+                return d + "°";
+            });
+
+        var line = d3.svg.line.radial()
+            .radius(function (d) {
+                return r(parseFloat(d['Freq(GHz)']));
+            })
+            .angle(function (d) {
+                return (parseFloat(d['Phi(Deg)']) * Math.PI / 180);
+            });
+
+        svg.selectAll("circle")
+            .data(data)
+            .enter()
+            .append("circle")
+            .attr("transform", function(d) {
+                var coors = line([d]).slice(1).slice(0, -1);
+//                console.log(line([d]).slice(1).slice(0, -1));
+                return "translate(" + coors + ")"
+            })
+            .attr("r", 5)
+            .attr("fill",function(d){
+                return z(d['RCS(dBm2)']);
+            });
+    })
+
+
+</script>

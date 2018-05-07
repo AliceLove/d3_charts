@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>line Chart Json</title>
+    <link rel="stylesheet" type="text/css" href="../../css/styles.css"/>
+    <script type="text/javascript" src="../../lib/d3.js"></script>
+</head>
+<body>
+<script type="text/javascript">
+    var margin = { top: 30 , right: 30 , bottom: 30 , left: 30};
+    var width = 1200 - margin.left - margin.right;
+    var height = 500 - margin.bottom - margin.top;
+
+    var svg = d3.select("body").append("svg")
+        .attr("class","axis")
+        .attr("height",height + margin.bottom + margin.top)
+        .attr("width",width + margin.left + margin.right)
+
+    //        .transform("translate")
+        .append("g")
+        .attr("transform","translate(" + margin.left + "," + margin.top + ")");
+
+//    var x = d3_test_charts.svg.axis()
+//        .range()
+
+    var x = d3.scale.linear()
+        .range([0,width]);
+
+    var y = d3.scale.linear()
+        .range([height,0]);
+
+    var xAxis = d3.svg.axis()
+        .scale(x)
+        .orient("bottom");
+
+    var yAxis = d3.svg.axis()
+        .scale(y)
+        .orient("left");
+
+
+
+    d3.json("../../data/movies.json",function (error,data) {
+//        data = data10.filter(function (d,i) {
+//           return i < 10;
+//        })
+
+        var x1 = d3.max(data,function (d) {
+            return parseInt(d.id);
+        });
+        x.domain([0, x1]);
+
+        var y1 = Math.round(d3.min(data,function (d) {
+             return d.score;
+         })) ;
+//        var y2 = d3_test_charts.max(data,function (d) {
+//            //console.log(d.score);
+//            return parseFloat(d.score);
+//        }) *1.1;
+
+        y.domain([y1,10]);
+        svg.append("g")
+            .attr("class","x-axis")
+            .attr("transform","translate(0," + height + ")")
+            .call(xAxis)
+            .append("text")
+            //.attr("transform","translate(" + width + "," + height + ")")
+            .attr("x",width)
+            .attr("dy","-.71em")
+            .style("text-anchor","end")
+            .text("ID号码");
+
+        svg.append("g")
+            .attr("class","y-axis")
+            .call(yAxis)
+            .append("text")
+            .attr("transform", "rotate(-90)")
+            .attr("y", 6)
+            .attr("dy", ".71em")
+            .style("text-anchor", "end")
+            .text("score");
+
+        var linePath = d3.svg.line()
+            .x(function(d){ return x(parseInt(d.id)); })
+            .y(function(d){ return y(parseFloat(d.score)); })
+            .interpolate("cardinal");
+
+//        svg.selectAll("path")
+//            .data(data)
+//            .enter()
+        svg.append("path")
+            .datum(data)
+            .attr("class","line")
+            .attr("d",linePath);
+//.attr("style","stroke: steelblue;")
+        //            .attr("d",function (d) {
+        //                return linePath(d);
+        //       });
+
+//            .attr("fill","none")
+//            .attr("stroke","red")
+//            .attr("stroke-width",1);
+    });
+
+//     function render(data) {
+//
+//     }
+
+</script>
+</body>
+</html>

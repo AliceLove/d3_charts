@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" type="text/css" href="../../css/styles.css"/>
+    <script src="../../lib/d3.js"></script>
+    <style>
+        .foreground path {
+            fill: none;
+            stroke: steelblue;
+            stroke-opacity: .7;
+        }
+
+        .axis line, .axis path {
+            fill: none;
+            stroke: #000;
+            shape-rendering: crispEdges;
+        }
+
+        .axis text {
+            text-shadow: 0 1px 0 #fff;
+        }
+
+    </style>
+</head>
+<body>
+<script type="text/javascript">
+    var m = [30,10,10,10],
+        w = 960 - m[1] - m[3],
+        h = 500 - m[0] - m[2];
+
+    var x = d3.scale.ordinal().rangePoints([0,w],.5);
+    var y = {};
+
+    var yAxis = d3.svg.axis().orient("left");
+    var line = d3.svg.line();
+
+    var svg = d3.select("body").append("svg")
+        .attr("width",w + m[1] + m[3])
+        .attr("height",h + m[0] + m[2])
+        .append("g")
+        .attr("transform","translate(" + m[3] + "," + m[0] + ")" );
+
+    d3.csv("../../data/cost-of-living.csv",function (error,cities) {
+        if (error) throw error;
+        // 有几个纵坐标，并为每一个定好比例尺
+//       console.log(cities[0]);
+        x.domain(dimensions = d3.keys(cities[0]).filter(function (d) {
+//            console.log("d is: "+d);
+            return d != "City" && (y[d] = d3.scale.linear()
+                .domain(d3.extent(cities,function (p) {return +p[d]}))  //  ??????????
+                .range([h,0]));
+        }));
+        console.log("dimensions is: "+dimensions);
+
+        var g = svg.selectAll(".dimension")
+            .data(dimensions)
+            .enter()
+            .append("g")
+            .attr("class","dimension")
+            .attr("transform", function(d) { return "translate(" + x(d) + ")"; });
+
+        g.append("g")
+            .attr("class","axis")
+            .each(function (d) {d3.select(this).call(yAxis.scale(y[d])) })
+            .append("text")
+            .attr("text-anchor","middle")
+            .attr("y",-9)
+            .text(function (d) {
+                return d;
+            });
+
+        svg.append("g")
+            .attr("class", "foreground")
+            .selectAll("path")
+            .data(cities).enter()
+            .append("path")
+            .attr("d",path);
+
+        function path(d) {
+//            console.log("map result: ");
+//            console.log(dimensions.map(function(p) {
+//                return [x(p), y[p](d[p])];
+//            }));
+//            console.log(d);
+//            console.log("dimensions is: "+dimensions);
+            return line(dimensions.map(function(p) {
+//                console.log(d); // 6个同
+//                console.log(y);
+//                console.log('p:'+p+ "  d[p] is " + d[p]); //d[p]是一个数字
+//                console.log(" y[p](d[p]): "+ y[p](d[p]));
+//                console.log("x(p) is : "+ x(p));
+                return [x(p), y[p](d[p])];
+            }));
+
+        }
+
+    })
+</script>
+</body>
+</html>
+
+
