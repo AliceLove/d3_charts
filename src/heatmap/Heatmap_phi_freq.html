@@ -26,23 +26,23 @@
 <script src="//d3js.org/d3.v3.min.js"></script>
 <script>
 
-    var margin = {top: 20, right: 90, bottom: 30, left: 50},
+    let margin = {top: 20, right: 90, bottom: 30, left: 50},
         width = 800 - margin.left - margin.right,
         height = 450 - margin.top - margin.bottom;
 
-//    var parseDate = d3.time.format("%Y-%m-%d").parse,
+//    let parseDate = d3.time.format("%Y-%m-%d").parse,
 //        formatDate = d3.time.format("%b %d");
 
-    var x = d3.scale.linear().range([0, width]),
+    let x = d3.scale.linear().range([0, width]),
         y = d3.scale.linear().range([height, 0]),
         z = d3.scale.linear().range(["white", "steelblue"]);
 
     // The size of the data in the CSV data file.
     // This could be inferred from the data if it weren't sparse.
-    var xStep = 1,
+    let xStep = 1,
         yStep = .2;
 
-    var svg = d3.select("body").append("svg")
+    let svg = d3.select("body").append("svg")
         .attr("width", width + margin.left + margin.right)
         .attr("height", height + margin.top + margin.bottom)
         .append("g")
@@ -86,7 +86,7 @@
             .style("fill", function(d) { return z(d['RCS(dBm2)']); });
 
         // Add a legend for the color values.
-        var legend = svg.selectAll(".legend")
+        let legend = svg.selectAll(".legend")
             .data(z.ticks(10).reverse())
             .enter().append("g")
             .attr("class", "legend")

@@ -34,11 +34,11 @@
 <script src="http://d3js.org/d3.v3.js"></script>
 <script>
 
-    var width = 960,
+    let width = 960,
         height = 500,
         radius = Math.min(width, height) / 2 - 30;
 
-    var svg = d3.select("body").append("svg")
+    let svg = d3.select("body").append("svg")
         .attr("width", width)
         .attr("height", height)
         .append("g")
@@ -57,12 +57,12 @@
             d['RCS(dBm2)'] = +d['RCS(dBm2)'];
         });
 
-        var r = d3.scale.linear()
+        let r = d3.scale.linear()
             .domain(d3.extent(data, function(d) { return d['Freq(GHz)']; }))  // 后期还要继续改domain的范围
             .range([0, radius]);
 
         //极坐标的几个圆形
-        var gr = svg.append("g")
+        let gr = svg.append("g")
             .attr("class", "r axis")
             .selectAll("g")
             .data(r.ticks(5))
@@ -82,7 +82,7 @@
             });
 
         // 极坐标的从圆心出来的射线+角度文字
-        var ga = svg.append("g")
+        let ga = svg.append("g")
             .attr("class", "a axis")
             .selectAll("g")
             .data(d3.range(-180, 180, 30))
@@ -109,7 +109,7 @@
                 return d + "°";
             });
 
-        var line = d3.svg.line.radial()
+        let line = d3.svg.line.radial()
             .radius(function (d) {
                 return r(parseFloat(d['Freq(GHz)']));
             })
@@ -122,7 +122,7 @@
             .enter()
             .append("circle")
             .attr("transform", function(d) {
-                var coors = line([d]).slice(1).slice(0, -1);
+                let coors = line([d]).slice(1).slice(0, -1);
 //                console.log(line([d]).slice(1).slice(0, -1));
                 return "translate(" + coors + ")"
             })

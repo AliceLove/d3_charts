@@ -4,7 +4,7 @@
     <title>12.2.2 折线图的提示框</title>
     <style>
         .axis path,
-        .x-axis line{
+        .axis line{
             fill: none;
             stroke: black;
             shape-rendering: crispEdges;
@@ -13,12 +13,6 @@
         .axis text {
             font-family: sans-serif;
             font-size: 11px;
-        }
-
-        .axis .grid-line{
-            stroke: black;
-            shape-rendering: crispEdges;
-            stroke-opacity: .2;
         }
 
         .overlay {
@@ -197,7 +191,7 @@
         //获取鼠标相对于透明矩形左上角的坐标，左上角坐标为(0,0)
         var mouseX = d3.mouse(this)[0] - padding.left;
         var mouseY = d3.mouse(this)[1] - padding.top;
-
+//console.log(d3.mouse(this))
         //通过比例尺的反函数计算原数据中的值，例如x0为某个年份，y0为GDP值
         var x0 = xScale.invert( mouseX );
         var y0 = yScale.invert( mouseY );
@@ -206,7 +200,7 @@
         x0 = Math.round(x0);
 
         //查找在原数组中x0的值，并返回索引号
-        var bisect = d3.bisector( function(d) { return d[0]; }).left;
+        var bisect = d3.bisector( function(d) { return d[0]; console.log(d[0]); }).left;
         var index = bisect(data, x0) ;
 
         //获取年份和gdp数据
@@ -216,8 +210,9 @@
         for(var k=0; k<dataset.length; k++ ){
             gdp[k] = { country: dataset[k].country,
                 value: dataset[k].gdp[index][1]};
+//            console.log(gdp[k])
         }
-
+//console.log(dataset.length)
         //设置提示框的标题文字（年份）
         title.html("<strong>" + year + "年</strong>");
 
@@ -237,7 +232,7 @@
 
         //获取垂直对齐线的x坐标
         var vlx = xScale(data[index][0]) + padding.left;
-
+//console.log(data[index]);
         //设定垂直对齐线的起点和终点
         vLine.attr("x1", vlx)
             .attr("y1",padding.top)
@@ -281,30 +276,14 @@
         .orient("left");
 
     svg.append("g")
-        .attr("class","x-axis")
+        .attr("class","axis")
         .attr("transform","translate(" + padding.left + "," + (height - padding.bottom) +  ")")
         .call(xAxis);
 
     svg.append("g")
-        .attr("class","y-axis")
+        .attr("class","axis")
         .attr("transform","translate(" + padding.left + "," + padding.top +  ")")
         .call(yAxis);
-
-    d3.selectAll("g.y-axis g.tick")
-        .append("line")
-        .classed("grid-line", true)
-        .attr("x1", 0)
-        .attr("y1", 0)
-        .attr("x2", height - padding.top - padding.bottom)
-        .attr("y2", 0);
-
-    d3.selectAll("g.x-axis g.tick") // <-B
-        .append("line") // <-C
-        .classed("grid-line", true)
-        .attr("x1", 0) // <-D
-        .attr("y1", 0)
-        .attr("x2", 0)
-        .attr("y2", - (height - padding.top - padding.bottom));
 
 </script>
 
