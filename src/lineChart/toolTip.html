@@ -200,9 +200,9 @@
         x0 = Math.round(x0);
 
         //查找在原数组中x0的值，并返回索引号
-        var bisect = d3.bisector( function(d) { return d[0]; console.log(d[0]); }).left;
+        var bisect = d3.bisector( function(d) { return d[0];  }).left;
         var index = bisect(data, x0) ;
-
+        console.log(index);
         //获取年份和gdp数据
         var year = x0;
         var gdp = [];
@@ -210,7 +210,7 @@
         for(var k=0; k<dataset.length; k++ ){
             gdp[k] = { country: dataset[k].country,
                 value: dataset[k].gdp[index][1]};
-//            console.log(gdp[k])
+           console.log(gdp[k])
         }
 //console.log(dataset.length)
         //设置提示框的标题文字（年份）
@@ -223,6 +223,7 @@
 
         //设置描述文字的内容
         desText.html( function(d,i){
+            console.log('I :' + i)
             return gdp[i].country + "\t" + "<strong>" + gdp[i].value + "</strong>";
         });
 

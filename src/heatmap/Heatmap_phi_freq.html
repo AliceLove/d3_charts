@@ -50,23 +50,22 @@
 
     d3.csv("../../data/phi_freq.csv", function(error, data) {
         if (error) throw error;
-        console.log(data);
+        // let phiSet = new Set()
         // Coerce the CSV data to the appropriate types.
-        data.forEach(function(d) {
+        data.forEach(function(d,i) {
+            // phiSet.add(d['Phi(Deg)'])
             d['Phi(Deg)'] = +d['Phi(Deg)'];   //取对象的.操作只针对属性是简单字符（字母数字下划线），若有其他类型字符推荐[" "]方法
             d['Freq(GHz)'] = +d['Freq(GHz)'];
             d['RCS(dBm2)'] = +d['RCS(dBm2)'];
+            // console.log(d["Phi(Deg)"] );
         });
+        // let phiArray = Array.from(phiSet)
+        // console.log(phiArray)
 
         // Compute the scale domains.
         x.domain(d3.extent(data, function(d) { return d['Phi(Deg)']; }));
         y.domain(d3.extent(data, function(d) { return d['Freq(GHz)']; }));
         z.domain(d3.extent(data, function(d) { return d['RCS(dBm2)']; }));
-
-//        console.log(d3.extent(data, function(d) { return d['RCS(dBm2)']; }));
-//        console.log(d3.extent(data, function(d) { return d['Phi(Deg)']; }));
-//        console.log(d3.extent(data, function(d) { return d['Freq(GHz)']; }));
-//        console.log(y(d['Freq(GHz)'] + yStep));
 
         // Extend the x- and y-domain to fit the last Freq(GHz).
         // For example, the y-Freq(GHz) 3200 corresponds to values [3200, 3300].

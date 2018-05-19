@@ -30,11 +30,11 @@
         .attr("width", width)	//设定<svg>的宽度属性
         .attr("height", height);//设定<svg>的高度属性
 
-    d3.csv("../../data/phi_freq.csv", function(error, data) {
+    d3.csv("../../data/rcs_phi_90.csv", function(error, data) {
         //2.转换数据
         var pie = d3.layout.pie()
             .value(function (d) {
-                return d['Phi(Deg)'];
+                return d['Theta'];
             });
 
         var piedata = pie(data);
@@ -84,7 +84,7 @@
             （3）设定提示框的透明度为1.0（完全不透明）
             */
 
-            tooltip.html(d['Phi(Deg)'] + "的出货量为" + "<br />" + d['Phi(Deg)'] + " 百万台")
+            tooltip.html(d['Theta'] + "的出货量为" + "<br />" + d['Theta'] + " 百万台")
                 .style("left", (d3.event.pageX) + "px")
                 .style("top", (d3.event.pageY + 20) + "px")
                 .style("opacity", 1.0);

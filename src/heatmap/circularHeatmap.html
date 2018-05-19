@@ -1,0 +1,318 @@
+<!DOCTYPE>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>Circular Heat Map</title>
+
+    <!-- JavaScript Libraries //-->
+    <script src="http://d3js.org/d3.v3.min.js"></script>
+
+    <style>
+        path:hover{
+
+            fill:#9b59b6;
+        }
+
+        .tooltip {
+            background: #eee;
+            box-shadow: 0 0 5px #999999;
+            color: #333;
+            font-size: 12px;
+            left: 130px;
+            padding: 10px;
+            position: absolute;
+            text-align: center;
+            top: 95px;
+            z-index: 10;
+            display: block;
+            opacity: 0;
+        }
+
+        .title{
+            font-size:16px;
+        }
+    </style>
+</head>
+
+<body>
+<div style="margin-left:50px;"  id="chart"></div>
+</body>
+<script>
+
+    d3.csv("../../data/phi_freq.csv", function (error,data) {
+        if (error) throw error;
+
+        var radial_labels = ["9.0000","9.2000","9.4000","9.6000","9.8000","10.0000"];
+
+        let phiSet = new Set()
+
+        data.forEach(function(d,i) {
+            phiSet.add(d['Phi(Deg)'])
+            d['Phi(Deg)'] = +d['Phi(Deg)'];   //取对象的.操作只针对属性是简单字符（字母数字下划线），若有其他类型字符推荐[" "]方法
+            d['Freq(GHz)'] = +d['Freq(GHz)'];
+            d['RCS(dBm2)'] = +d['RCS(dBm2)'];
+            // console.log(d["Phi(Deg)"] );
+        });
+        let segment_labels = Array.from(phiSet)
+        // console.log(segment_labels)
+
+        let dataset = convertDataToDateset(data)
+        // console.log(dataset)
+        loadCircularHeatMap(dataset,"#chart",radial_labels, segment_labels);
+
+    })
+
+    function convertDataToDateset(data) {
+        let result = []
+        while (data.length > 0) {
+            let tmpMap = new Map()
+            if (data.length <= 200 && data.length >= 91) {
+                result = result.concat(data)
+                data = []
+                break
+            }
+            for (let index in data) {
+                let d = data[index]
+                if (!tmpMap.has(d["Phi(Deg)"])) {
+                    data.splice(index, 1) //splice() 方法向/从数组中添加/删除项目，然后返回被删除的项目。
+                    tmpMap.set(d["Phi(Deg)"], d)
+                }
+            }
+            let tmpArr = Array.from(tmpMap.values())
+            // console.log(data.length)
+            result = result.concat(tmpArr)
+        }
+        return result
+    }
+
+    function loadCircularHeatMap (dataset, dom_element_to_append_to,radial_labels,segment_labels) {
+
+        var margin = {top: 50, right: 50, bottom: 50, left: 50};
+        var width = 900 - margin.left - margin.right;
+
+        var height = width;
+        var innerRadius = 10;
+        var segmentHeight = (width - margin.top - margin.bottom - 2*innerRadius )/(2*radial_labels.length)
+
+        var chart = circularHeatChart()
+            .innerRadius(innerRadius)
+            .segmentHeight(segmentHeight)
+            .range(["#F6EFA6", "#BF444C"])
+            .radialLabels(radial_labels)
+            .segmentLabels(segment_labels);
+
+        chart.accessor(function(d) {return d['RCS(dBm2)'];})
+
+        var svg = d3.select(dom_element_to_append_to)
+            .selectAll('svg')
+            .data([dataset])
+            .enter()
+            .append('svg')
+            .attr("width", width + margin.left + margin.right)
+            .attr("height", height + margin.top + margin.bottom)
+            .append('g')
+            .attr("transform",
+                "translate(" + ( (width )/2 - (radial_labels.length*segmentHeight + innerRadius)  ) + "," + margin.top + ")")
+            .call(chart);
+
+        var tooltip = d3.select(dom_element_to_append_to)
+            .append('div')
+            .attr('class', 'tooltip');
+
+        tooltip.append('div')
+            .attr('class', 'month');
+        tooltip.append('div')
+            .attr('class', 'value');
+        tooltip.append('div')
+            .attr('class', 'type');
+
+        svg.selectAll("path")
+            .on('mouseover', function(d) {
+                tooltip.select('.month').html("<b> Phi(Deg): " + d['Phi(Deg)'] + "</b>");
+                tooltip.select('.type').html("<b> Freq(GHz): " + d['Freq(GHz)'] + "</b>");
+                tooltip.select('.value').html("<b> RCS(dBm2): " + d['RCS(dBm2)'] + "</b>");
+
+                tooltip.style('display', 'block');
+                tooltip.style('opacity',2);
+            })
+            .on('mousemove', function(d) {
+
+                tooltip.style('top', (d3.event.layerY + 10) + 'px')
+                    .style('left', (d3.event.layerX - 25) + 'px');
+            })
+            .on('mouseout', function(d) {
+                tooltip.style('display', 'none');
+                tooltip.style('opacity',0);
+            });
+    }
+
+    function circularHeatChart() {
+        var margin = {top: 20, right: 20, bottom: 20, left: 20},
+            innerRadius = 20,
+            numSegments = 181,
+            segmentHeight = 20,
+            domain = null,
+            range = [],
+            accessor = function(d) {return d;},
+            radialLabels = segmentLabels = [];
+
+        function chart(selection) {
+            selection.each(function(data) {
+                var svg = d3.select(this);
+console.log(data.length )
+                var offset = innerRadius + Math.ceil(data.length / numSegments) * segmentHeight;
+                g = svg.append("g")
+                    .classed("circular-heat", true)
+                    // .attr("stroke",function (d) {return "grey"})
+                    .attr("transform", "translate(" + parseInt(margin.left + offset) + "," + parseInt(margin.top + offset) + ")");
+
+                var autoDomain = false;
+                if (domain === null) {
+                    domain = d3.extent(data, accessor);
+                    autoDomain = true;
+                }
+                var color = d3.scale.linear().domain(domain).range(range);
+                if(autoDomain)
+                    domain = null;
+
+                g.selectAll("path").data(data)
+                    .enter().append("path")
+                    .attr("d", d3.svg.arc().innerRadius(ir).outerRadius(or).startAngle(sa).endAngle(ea))
+                    // .attr("stroke", function(d) {return "#4f5b69";})
+                    .attr("fill", function(d) {return color(accessor(d));});
+
+                // Unique id so that the text path defs are unique - is there a better way to do this?
+                var id = d3.selectAll(".circular-heat")[0].length;
+
+                //Radial labels
+                var lsa = 0.01; //Label start angle
+                var labels = svg.append("g")
+                    .classed("labels", true)
+                    .classed("radial", true)
+                    .attr("transform", "translate(" + parseInt(margin.left + offset) + "," + parseInt(margin.top + offset) + ")");
+
+                labels.selectAll("def")
+                    .data(radialLabels).enter()
+                    .append("def")
+                    .append("path")
+                    .attr("id", function(d, i) {return "radial-label-path-"+id+"-"+i;})
+                    .attr("d", function(d, i) {
+                        var r = innerRadius + ((i + 0.2) * segmentHeight);
+                        return "m" + r * Math.sin(lsa) + " -" + r * Math.cos(lsa) +
+                            " a" + r + " " + r + " 0 1 1 -1 0";
+                    });
+
+                labels.selectAll("text")
+                    .data(radialLabels).enter()
+                    .append("text")
+                    .append("textPath")
+                    .attr("xlink:href", function(d, i) {return "#radial-label-path-"+id+"-"+i;})
+                    .style("font-size", "16px")
+                    .text(function(d) {return d;});
+
+                //Segment labels
+                var segmentLabelOffset = 2;
+                var r = innerRadius + Math.ceil(data.length / numSegments) * segmentHeight + segmentLabelOffset;
+                labels = svg.append("g")
+                    .classed("labels", true)
+                    .classed("segment", true)
+                    .attr("transform", "translate(" + parseInt(margin.left + offset) + "," + parseInt(margin.top + offset) + ")");
+
+                labels.append("def")
+                    .append("path")
+                    .attr("id", "segment-label-path-"+id)
+                    .attr("d", "m0 -" + r + " a" + r + " " + r + " 0 1 1 -1 0");
+
+                labels.selectAll("text")
+                    .data(segmentLabels).enter()
+                    .append("text")
+                    .append("textPath")
+                    .attr("xlink:href", "#segment-label-path-"+id)
+                    .style("font-size", "16px")
+                    .attr("startOffset", function(d, i) {return i * 100 / numSegments + "%";})
+                    .text(function (d) {
+                        if (d % 15 === 0 && d < 180) {
+                            return parseInt(d) + "°";
+                        }
+                    });
+            });
+
+        }
+
+        /* Arc functions */
+        ir = function(d, i) {
+            // console.log("d:" + JSON.stringify(d));
+            // console.log("i:" + i);
+            return innerRadius + Math.floor(i/numSegments) * segmentHeight;
+        }
+        or = function(d, i) {
+            return innerRadius + segmentHeight + Math.floor(i/numSegments) * segmentHeight;
+        }
+        sa = function(d, i) {
+            return (i * 2 * Math.PI) / numSegments;
+        }
+        ea = function(d, i) {
+            return ((i + 1) * 2 * Math.PI) / numSegments;
+        }
+
+        /* Configuration getters/setters */
+        chart.margin = function(_) {
+            if (!arguments.length) return margin;
+            margin = _;
+            return chart;
+        };
+
+        chart.innerRadius = function(_) {
+            if (!arguments.length) return innerRadius;
+            innerRadius = _;
+            return chart;
+        };
+
+        chart.numSegments = function(_) {
+            if (!arguments.length) return numSegments;
+            numSegments = _;
+            return chart;
+        };
+
+        chart.segmentHeight = function(_) {
+            if (!arguments.length) return segmentHeight;
+            segmentHeight = _;
+            return chart;
+        };
+
+        chart.domain = function(_) {
+            if (!arguments.length) return domain;
+            domain = _;
+            return chart;
+        };
+
+        chart.range = function(_) {
+            if (!arguments.length) return range;
+            range = _;
+            return chart;
+        };
+
+        chart.radialLabels = function(_) {
+            if (!arguments.length) return radialLabels;
+            if (_ == null) _ = [];
+            radialLabels = _;
+            return chart;
+        };
+
+        chart.segmentLabels = function(_) {
+            if (!arguments.length) return segmentLabels;
+            if (_ == null) _ = [];
+            segmentLabels = _;
+            return chart;
+        };
+
+        chart.accessor = function(_) {
+            if (!arguments.length) return accessor;
+            accessor = _;
+            return chart;
+        };
+
+        return chart;
+    }
+</script>
+</html>
