@@ -13,7 +13,16 @@
     .tile {
         shape-rendering: crispEdges;
     }
-
+    .tooltip{
+        width: 100px;
+        height: auto;
+        position: absolute;
+        line-height: 26px;
+        text-align: left;
+        border: 1px solid black;
+        background-color: white;
+        border-radius: 5px;
+    }
     .axis path,
     .axis line {
         fill: none;
@@ -25,17 +34,17 @@
 <body>
 <script src="//d3js.org/d3.v3.min.js"></script>
 <script>
-//'#313695', '#4575b4', '#74add1', '#abd9e9', '#e0f3f8', '#ffffbf', '#fee090', '#fdae61', '#f46d43', '#d73027', '#a50026'
+    //'#313695', '#4575b4', '#74add1', '#abd9e9', '#e0f3f8', '#ffffbf', '#fee090', '#fdae61', '#f46d43', '#d73027', '#a50026'
     let margin = {top: 20, right: 90, bottom: 30, left: 50},
         width = 800 - margin.left - margin.right,
         height = 450 - margin.top - margin.bottom;
 
-//    let parseDate = d3.time.format("%Y-%m-%d").parse,
-//        formatDate = d3.time.format("%b %d");
+    //    let parseDate = d3.time.format("%Y-%m-%d").parse,
+    //        formatDate = d3.time.format("%b %d");
 
     let x = d3.scale.linear().range([0, width]),
         y = d3.scale.linear().range([height, 0]),
-        z = d3.scale.linear().range(["white", "steelblue"]);
+        z = d3.scale.linear().range([0, 360]);
 
     // The size of the data in the CSV data file.
     // This could be inferred from the data if it weren't sparse.
@@ -48,11 +57,11 @@
         .append("g")
         .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
 
-    d3.csv("../../data/phi_freq.csv", function(error, data) {
+    d3.csv("../../data/phi_freq.csv", function (error, data) {
         if (error) throw error;
         // let phiSet = new Set()
         // Coerce the CSV data to the appropriate types.
-        data.forEach(function(d,i) {
+        data.forEach(function (d, i) {
             // phiSet.add(d['Phi(Deg)'])
             d['Phi(Deg)'] = +d['Phi(Deg)'];   //取对象的.操作只针对属性是简单字符（字母数字下划线），若有其他类型字符推荐[" "]方法
             d['Freq(GHz)'] = +d['Freq(GHz)'];
@@ -63,9 +72,15 @@
         // console.log(phiArray)
 
         // Compute the scale domains.
-        x.domain(d3.extent(data, function(d) { return d['Phi(Deg)']; }));
-        y.domain(d3.extent(data, function(d) { return d['Freq(GHz)']; }));
-        z.domain(d3.extent(data, function(d) { return d['RCS(dBm2)']; }));
+        x.domain(d3.extent(data, function (d) {
+            return d['Phi(Deg)'];
+        }));
+        y.domain(d3.extent(data, function (d) {
+            return d['Freq(GHz)'];
+        }));
+        z.domain(d3.extent(data, function (d) {
+            return d['RCS(dBm2)'];
+        }));
 
         // Extend the x- and y-domain to fit the last Freq(GHz).
         // For example, the y-Freq(GHz) 3200 corresponds to values [3200, 3300].
@@ -78,12 +93,19 @@
             .data(data)
             .enter().append("rect")
             .attr("class", "tile")
-            .attr("x", function(d) { return x(d['Phi(Deg)']); })
-            .attr("y", function(d) { return y(d['Freq(GHz)'] + yStep); })
+            .attr("x", function (d) {
+                return x(d['Phi(Deg)']);
+            })
+            .attr("y", function (d) {
+                return y(d['Freq(GHz)'] + yStep);
+            })
             .attr("width", x(xStep) - x(0))
-            .attr("height",  y(0) - y(yStep))
-            .style("fill", function(d) { return z(d['RCS(dBm2)']); });
-console.log(z.ticks(10).reverse())
+            .attr("height", y(0) - y(yStep))
+            .style("fill", function (d) {
+                return d3.hsl(z(d['RCS(dBm2)']), 1, .5);
+            }); //return z(d['RCS(dBm2)']);
+
+        /*
         // Add a legend for the color values.
         let legend = svg.selectAll(".legend")
             .data(z.ticks(10).reverse())
@@ -101,6 +123,59 @@ console.log(z.ticks(10).reverse())
             .attr("y", 10)
             .attr("dy", ".35em")
             .text(String);
+*/
+        var tooltip = d3.select("body")
+            .append('div')
+            .attr('class', 'tooltip');
+
+        tooltip.append('div')
+            .attr('class', 'phi');
+        tooltip.append('div')
+            .attr('class', 'RCS');
+        tooltip.append('div')
+            .attr('class', 'freq');
+
+        svg.selectAll("rect")
+            .on('mouseover', function(d) {
+                tooltip.select('.phi').html("<b> Phi(Deg): " + d['Phi(Deg)'] + "</b>");
+                tooltip.select('.RCS').html("<b> Freq(GHz): " + d['Freq(GHz)'] + "</b>");
+                tooltip.select('.freq').html("<b> RCS(dBm2): " + d['RCS(dBm2)'] + "</b>");
+
+                tooltip.style('display', 'block');
+                tooltip.style('opacity',2);
+            })
+            .on('mousemove', function() {
+
+                tooltip.style('top', (d3.event.layerY + 10) + 'px')
+                    .style('left', (d3.event.layerX - 25) + 'px');
+            })
+            .on('mouseout', function() {
+                tooltip.style('display', 'none');
+                tooltip.style('opacity',0);
+            });
+
+        let linearGradient = svg.append("defs")
+            .append("linearGradient")
+            .attr("id", "colorLinearGradient")
+            .attr("x1", "0%")
+            .attr("y1", "0%")
+            .attr("x2", "0%")
+            .attr("y2", "100%");
+
+        let colorArray = ["#e31f13", "#e0e000", "#00e000", "#00dfe0", "#0a0ee3", "#e10ce2", "#e31f13"];
+
+        for (let i = 0; i < colorArray.length; i++) {
+            linearGradient.append("stop")
+                .attr("offset", i * 16.67 + "%")
+                .attr("stop-color", colorArray[i])
+        }
+
+        svg.append("rect")
+            .attr("x", 680)
+            .attr("y", 20)
+            .attr("width", 20)
+            .attr("height", 160)
+            .attr("fill", "url(#colorLinearGradient)");//linear-gradient(#e31f13, #e0e000, #00e000, #00dfe0, #0a0ee3, #e10ce2, #e31f13)
 
         svg.append("text")
             .attr("class", "label")
